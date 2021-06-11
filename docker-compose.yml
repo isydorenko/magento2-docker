@@ -14,6 +14,8 @@ services:
           - 9000
         volumes:
           - ./magento:/var/www/magento:cached
+          - ./php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+          - ./php/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
         depends_on:
           - db
     db:
@@ -23,6 +25,9 @@ services:
         expose:
           - 3306
         env_file: .env
+        volumes:
+          - ./db:/docker-entrypoint-initdb.d
+          - dbdata:/var/lib/mysql
         healthcheck:
             test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-p$MYSQL_ROOT_PASSWORD"]
             timeout: 20s
@@ -36,8 +41,15 @@ services:
           - "8025:8025"
     redis:
         image: redis:latest
+    rabbitmq:
+        image: rabbitmq:3.8-management-alpine
+        ports:
+          - "15672:15672"
+          - "5672:5672"
+        volumes:
+          - rabbitmqdata:/var/lib/rabbitmq
     elasticsearch:
-      image: elasticsearch:7.6.2
+      build: ./es
       ports:
         - "9200:9200"
         - "9300:9300"
@@ -45,3 +57,5 @@ services:
         "discovery.type": "single-node"
 volumes:
     magento:
+    rabbitmqdata:
+    dbdata:
